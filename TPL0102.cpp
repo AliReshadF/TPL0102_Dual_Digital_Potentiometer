@@ -84,8 +84,8 @@ TPL0102::TPL0102(uint8_t ledA, uint8_t ledB, bool DEBUG) {
 
 void TPL0102::begin(uint16_t addr, uint32_t speed) {
   
-  Wire.begin();
-  Wire.setClock(speed);
+  Wire.begin(SDA,SCL);
+  Wire.setClock(STANDARD);
 
   address = addr;
   _nominalResistance = TPL0102_NOMINAL_RESISTANCE;
@@ -110,8 +110,8 @@ void TPL0102::begin(uint16_t addr, uint32_t speed) {
 
 void TPL0102::begin(uint16_t addr, float nomRes, uint32_t speed) {
   
-  Wire.begin();
-  Wire.setClock(speed);
+  Wire.begin(SDA,SCL);
+  Wire.setClock(STANDARD);
 
   address = addr;
   _nominalResistance = nomRes;
@@ -154,11 +154,11 @@ void TPL0102::switchPot(uint8_t ch, uint8_t st){
   Wire.beginTransmission(address);
   Wire.write(ACR);
   Wire.endTransmission(false);   // --> Thanks to https://forum.arduino.cc/index.php?topic=385377.0
-  Wire.requestFrom(address, 1, false);
+  Wire.requestFrom(address, static_cast<size_t>(1), static_cast<bool>(false));
 
   while (Wire.available())   // slave may send less than requested
   {
-    ACR_VALUE = Wire.receive();    // receive a byte as character
+    ACR_VALUE = Wire.read();    // receive a byte as character
 
   }
 
@@ -187,7 +187,7 @@ void TPL0102::switchPot(uint8_t ch, uint8_t st){
 
   Wire.beginTransmission(address);
   Wire.write(ACR);
-  Wire.send(SHDN_INSTR);          // sends potentiometer value byte
+  Wire.write(SHDN_INSTR);          // sends potentiometer value byte
   Wire.endTransmission(true);     // stop transmitting
 
 }
@@ -270,8 +270,10 @@ void TPL0102::dataWrite(uint8_t ch, uint8_t val){
 
     Wire.beginTransmission(address);
     Wire.write(wiperPointer);
-    Wire.send(val);    // sends potentiometer value byte
-    Wire.endTransmission(true);     // stop transmitting
+    Wire.write(val);    // sends potentiometer value byte
+    int res = Wire.endTransmission(true);     // stop transmitting
+    if (_debug)
+    Serial.printf("result of I2C transmission potentionneter is %d, I2C Address: %u\n", res,address);
 
 }
 
@@ -323,6 +325,17 @@ uint8_t TPL0102::setValue(uint8_t ch, float desiredR) {
   Serial.print(F("Target tap: "));
   Serial.println(tapTarget);
 
+  Serial.print(F("desiredR: "));
+  Serial.println(desiredR);
+
+  Serial.print(F("ch: "));
+  Serial.println(ch);
+
+  Serial.print(F("_tapPointer[ch]: "));
+  Serial.println(_tapPointer[ch]);
+
+  Serial.println();
+
   }
 
    if (tapTarget != _tapPointer[ch]) {
@@ -357,6 +370,8 @@ uint8_t TPL0102::setTap(uint8_t ch, uint8_t desiredTap) {
 
   Serial.print(F("Target tap: "));
   Serial.println(tapTarget);
+  Serial.println();
+
 
   }
 
@@ -427,11 +442,11 @@ void TPL0102::readRegistersStatus() {
     Wire.beginTransmission(address);
     Wire.write(_regs[pos]);
     Wire.endTransmission(false);   // --> Thanks to https://forum.arduino.cc/index.php?topic=385377.0
-    Wire.requestFrom(address, 1, false);
+    Wire.requestFrom(address, static_cast<size_t>(1), static_cast<bool>(false));
 
     while (Wire.available())   // slave may send less than requested
     {
-      char I2CResponse = Wire.receive();    // receive a byte as character
+      char I2CResponse = (char)Wire.read();    // receive a byte as character
 
       _initialState[pos] = (uint8_t)I2CResponse;
 
@@ -464,12 +479,12 @@ void TPL0102::readDummyRegStatus() {
     Wire.beginTransmission(address);
     Wire.write(dummyPos);
     Wire.endTransmission(false);   // --> Thanks to https://forum.arduino.cc/index.php?topic=385377.0
-    Wire.requestFrom(address, 1, false);
+    Wire.requestFrom(address, static_cast<size_t>(1), static_cast<bool>(false));
 
     while (Wire.available())   // slave may send less than requested
     {
 
-      char I2CResponse = Wire.receive();    // receive a byte as character
+      char I2CResponse = (char)Wire.read();    // receive a byte as character
 
       if (_debug == true) {
         Serial.print(F("Dummy ["));

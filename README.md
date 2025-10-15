@@ -39,3 +39,16 @@ P&D
 Cheers :beer:
 
 dzalf
+
+## Update: October 2025.
+
+In this fork, I have added some code so you can use this library for your ESP32.
+
+I highly recommend using this loop if you want to have a smooth change. For instance, you can add a loop like this:
+
+```cpp
+for (size_t i = 0; i < position; i++)
+{
+    POT.dataWrite(channel_selecet,position);
+}
+```
